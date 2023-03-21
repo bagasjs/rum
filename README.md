@@ -29,7 +29,7 @@ To run this example you will need to grab the ["stb_image.h"](https://github.com
 ```c
 #include <rum.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include "./stb_image.h"
+#include "stb_image.h"
 
 int main(void) {
 	if(!rum_init("Example", 640, 480))
