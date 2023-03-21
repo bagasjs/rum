@@ -33,8 +33,6 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#define CGMATH_IMPLEMENTATION
-#include <cgmath.h>
 
 typedef struct {
     GLFWwindow* glfw_window;

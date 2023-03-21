@@ -3,29 +3,6 @@ workspace "Rum"
     configurations { "Debug", "Release" }
     toolset "clang"
 
-project "example"
-    kind "ConsoleApp"
-    language "C"
-    location "build/scripts"
-    objdir "build/obj/"
-    targetdir "build/bin/"
-    files {
-        "example/main.c"
-    }
-    includedirs {
-        "include",
-        "src",
-        "src/backends",
-        "src/backends/glad",
-        "src/backends/GLFW",
-        "src/backends/KHR",
-    }
-    links {
-        "rum",
-        "X11",
-        "m"
-    }
-
 project "rum"
     kind "StaticLib"
     objdir "build/obj/"
