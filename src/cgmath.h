@@ -214,8 +214,8 @@ void vec2_normalize(vec2_t* a) {
 }
 
 bool vec2_compare(vec2_t a, vec2_t b) {
-	if(abs(a.x - b.x) > CGMATH_FLOAT_EPSILON) return false;
-	if(abs(a.y - b.y) > CGMATH_FLOAT_EPSILON) return false;
+	if(fabsf(a.x - b.x) > CGMATH_FLOAT_EPSILON) return false;
+	if(fabsf(a.y - b.y) > CGMATH_FLOAT_EPSILON) return false;
 	return true;
 }
 
@@ -298,9 +298,9 @@ vec3_t vec3_normalized(vec3_t a) {
 }
 
 bool vec3_compare(vec3_t a, vec3_t b) {
-    if(abs(a.x - b.x) > CGMATH_FLOAT_EPSILON) return false;
-    if(abs(a.y - b.y) > CGMATH_FLOAT_EPSILON) return false;
-    if(abs(a.z - b.z) > CGMATH_FLOAT_EPSILON) return false;
+    if(fabsf(a.x - b.x) > CGMATH_FLOAT_EPSILON) return false;
+    if(fabsf(a.y - b.y) > CGMATH_FLOAT_EPSILON) return false;
+    if(fabsf(a.z - b.z) > CGMATH_FLOAT_EPSILON) return false;
     return true;
 }
 
@@ -418,6 +418,7 @@ mat4_t mat4_add(mat4_t a, mat4_t b) {
 	for(int i = 0; i < 16; i++) {
 		res.Elements[i] = a.Elements[i] + b.Elements[i];
 	}
+	return res;
 }
 
 mat4_t mat4_sub(mat4_t a, mat4_t b) {
@@ -425,6 +426,7 @@ mat4_t mat4_sub(mat4_t a, mat4_t b) {
 	for(int i = 0; i < 16; i++) {
 		res.Elements[i] = a.Elements[i] - b.Elements[i];
 	}
+	return res;
 }
 
 mat4_t mat4_mul(mat4_t a, mat4_t b) {
@@ -432,6 +434,7 @@ mat4_t mat4_mul(mat4_t a, mat4_t b) {
 	for(int i = 0; i < 16; i++) {
 		res.Elements[i] = a.Elements[i] * b.Elements[i];
 	}
+	return res;
 }
 
 mat4_t mat4_div(mat4_t a, mat4_t b) {
@@ -439,6 +442,7 @@ mat4_t mat4_div(mat4_t a, mat4_t b) {
 	for(int i = 0; i < 16; i++) {
 		res.Elements[i] = a.Elements[i] / b.Elements[i];
 	}
+	return res;
 }
 
 mat4_t mat4_dot(mat4_t a, mat4_t b) {

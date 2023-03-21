@@ -2,7 +2,6 @@
 #define RUM_H_
 
 #include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
 
 typedef enum {
@@ -10,14 +9,22 @@ typedef enum {
     RUM_RGBA = 4,
 } RumImageFormat;
 
+typedef enum {
+    RUM_LINEAR = 0x2600,
+    RUM_NEAREST = 0x2601,
+    RUM_NEAREST_MIPMAP_NEAREST = 0x2700,
+    RUM_LINEAR_MIPMAP_NEAREST = 0x2701,
+    RUM_NEAREST_MIPMAP_LINEAR = 0x2702,
+    RUM_LINEAR_MIPMAP_LINEAR = 0x2703,
+} RumFilter;
 
-bool rum_init(const char* title, uint32_t width, uint32_t height);
+
+bool rum_init(const char* screen_title, int32_t screen_width, int32_t screen_height);
 void rum_terminate();
 bool rum_check_event(int event);
 void rum_update_screen();
 
-void rum_render_move(RumImageFormat format, int32_t x, int32_t y, size_t width, size_t height, void* data);
-void rum_render_copy(RumImageFormat format, int32_t x, int32_t y, size_t width, size_t height, void* data);
+void rum_copy_image(RumImageFormat format, const uint8_t* image_data, uint64_t image_width, uint64_t image_height, int32_t x, int32_t y);
 
 typedef enum {
     /** Unknown Event */
