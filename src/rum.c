@@ -14,27 +14,6 @@
 #define CGMATH_IMPLEMENTATION
 #include <cgmath.h>
 
-void check_opengl_errors(const char* name)
-{
-    int check = 1;
-    while (check)
-    {
-        const GLenum err = glGetError();
-        switch (err)
-        {
-            case GL_NO_ERROR: check = 0; break;
-            case 0x0500: printf("%s:%s", name, "OpenGL Error detected: GL_INVALID_ENUM"); break;
-            case 0x0501: printf("%s:%s", name, "OpenGL Error detected: GL_INVALID_VALUE"); break;
-            case 0x0502: printf("%s:%s", name, "OpenGL Error detected: GL_INVALID_OPERATION"); break;
-            case 0x0503: printf("%s:%s", name, "OpenGL Error detected: GL_STACK_OVERFLOW"); break;
-            case 0x0504: printf("%s:%s", name, "OpenGL Error detected: GL_STACK_UNDERFLOW"); break;
-            case 0x0505: printf("%s:%s", name, "OpenGL Error detected: GL_OUT_OF_MEMORY"); break;
-            case 0x0506: printf("%s:%s", name, "OpenGL Error detected: GL_INVALID_FRAMEBUFFER_OPERATION"); break;
-            default: printf("%s:%i", "OpenGL Error detected: Unknown error code:", err); break;
-        }
-    }
-}
-
 typedef struct {
     GLFWwindow* glfw_window;
     bool initialized;
@@ -45,6 +24,7 @@ typedef struct {
         uint8_t* data;
         size_t data_size;
         size_t width, height;
+        RumImageFormat format;
         bool updated;
     } image;
 } RumContext;
@@ -54,24 +34,24 @@ typedef struct {
 } RumVertex;
 
 const char* vert_shader_source = 
-    "#version 430 core\n"
+    "#version 330 core\n"
     "layout(location = 0) in vec2 a_position;\n"
     "layout(location = 1) in vec2 a_texCoords;\n"
     "out vec2 v_texCoords;\n"
     "void main()\n"
     "{\n"
         "v_texCoords = a_texCoords;\n"
-        "gl_Position =vec4(a_position, 0.0, 1.0);\n"
+        "gl_Position =vec4(a_position.x, a_position.y, 0.0, 1.0);\n"
     "}";
 
 const char* frag_shader_source = 
-    "#version 430 core\n"
+    "#version 330 core\n"
     "layout(location = 0) out vec4 o_color;\n"
     "in vec2 v_texCoords;\n"
-    "uniform sampler2D u_Textures;\n"
+    "uniform sampler2D u_texture;\n"
     "void main()\n"
     "{\n"
-        "outColor = texture();\n"
+        "o_color = texture(u_texture, v_texCoords);\n"
     "}\n";
 
 static RumContext RUM = {0};
@@ -82,7 +62,7 @@ bool rum_init(const char* screen_title, int32_t screen_width, int32_t screen_hei
     if(!glfwInit())
         return false;
     
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -91,7 +71,8 @@ bool rum_init(const char* screen_title, int32_t screen_width, int32_t screen_hei
 
     RUM.image.width = screen_width;
     RUM.image.height = screen_height;
-    RUM.image.data_size = sizeof(char) * RUM_RGBA * screen_width * screen_height;
+    RUM.image.format = RUM_RGBA;
+    RUM.image.data_size = sizeof(char) * RUM.image.format * screen_width * screen_height;
     RUM.image.data = malloc(RUM.image.data_size);
     memset(RUM.image.data, 0, RUM.image.data_size);
 
@@ -129,7 +110,7 @@ bool rum_init(const char* screen_title, int32_t screen_width, int32_t screen_hei
         (RumVertex) { vec2( 1.0f,  1.0f), vec2(1.0f, 1.0f) },
         (RumVertex) { vec2(-1.0f,  1.0f), vec2(0.0f, 1.0f) },
     };
-    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(RumVertex), vertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(RumVertex), (const void*) offsetof(RumVertex, position));
     glEnableVertexAttribArray(1);
@@ -141,6 +122,7 @@ bool rum_init(const char* screen_title, int32_t screen_width, int32_t screen_hei
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(uint32_t), indices, GL_STATIC_DRAW);
 
     glGenTextures(1, &RUM.image.texture);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, RUM.image.texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei) RUM.image.width, (GLsizei) RUM.image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const void*) RUM.image.data);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -180,38 +162,41 @@ bool rum_check_event(int event) {
     return false;
 }
 
-void rum_copy_image(RumImageFormat format, const uint8_t* image_data, uint64_t image_width, uint64_t image_height, int32_t px, int32_t py) {
-    for(int32_t dy = 0; dy < (int32_t) image_height; ++dy) {
-        int y = py + dy;
-        if(0 <= y && y < (int32_t) RUM.image.height) {
-            for(int32_t dx = 0; dx < (int32_t) image_width; ++dx) {
-                int x = px + dx;
-				if(0 <= x && x < (int) RUM.image.width) {
-                    RUM.image.data[y * RUM.image.width + x + 0] = image_data[dy * image_width + dx + 0];
-                    RUM.image.data[y * RUM.image.width + x + 1] = image_data[dy * image_width + dx + 1];
-                    RUM.image.data[y * RUM.image.width + x + 2] = image_data[dy * image_width + dx + 2];
-                    if(format == RUM_RGBA)
-                        RUM.image.data[y * RUM.image.width + x + 3] = image_data[dy * image_width + dx + 3];
-                    else
-                        RUM.image.data[y * RUM.image.width + x + 3] = 0;
-				}
+void rum_copy_image(RumImageFormat src_format, const uint8_t* image_data, uint64_t image_width, uint64_t image_height, int32_t px, int32_t py) {
+    for(int dy = 0; dy < image_height; ++dy) {
+        int target_y = py + dy;
+        if(0 <= target_y && target_y < (int) RUM.image.height) {
+            for(int dx = 0; dx < image_width; ++dx) {
+                int target_x = px + dx;
+                if(0 <= target_x && target_x < RUM.image.width) {
+                    int source_index = (dy * image_width + dx) * RUM.image.format;
+                    int target_index = (target_y * RUM.image.width + target_x) * RUM.image.format;
+                    for(int i = 0; i < src_format; ++i) {
+                        RUM.image.data[target_index + i] = image_data[source_index + i];
+                    }
+                    if(src_format < 4) {
+                        RUM.image.data[target_index + 3] = 255;
+                    }
+                }
             }
         }
     }
+
     RUM.image.updated = true;
 }
 
 void rum_update_screen()
 {
-    check_opengl_errors("TEST");
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RUM.index_buffer);
     glBindVertexArray(RUM.vertex_array);
     glUseProgram(RUM.shader_program);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, RUM.image.texture);
-    if(RUM.image.updated)
+    if(RUM.image.updated) {
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, (GLsizei)RUM.image.width, (GLsizei)RUM.image.height, GL_RGBA, GL_UNSIGNED_BYTE, RUM.image.data);
-    RUM.image.updated = false;
+        RUM.image.updated = false;
+    }
+    glUniform1i(glGetUniformLocation(RUM.shader_program, "u_texture"), 0);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
     glfwSwapBuffers(RUM.glfw_window);
 }

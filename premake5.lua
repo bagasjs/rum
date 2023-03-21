@@ -13,7 +13,12 @@ project "example"
         "example/main.c"
     }
     includedirs {
-        "include"
+        "include",
+        "src",
+        "src/backends",
+        "src/backends/glad",
+        "src/backends/GLFW",
+        "src/backends/KHR",
     }
     links {
         "rum",
