@@ -3,7 +3,7 @@ A simple library to display an image into window. It just take an array of color
 
 ### API
 ```c
-/// Core API
+/// Core APIs
 
 // Create context and window
 bool rum_init(const char* screen_title, int32_t screen_width, int32_t screen_height); 
@@ -18,7 +18,7 @@ void rum_copy_image(RumImageFormat format, const uint8_t* image_data, uint64_t i
 void rum_update_screen(void);
 
 
-/// Supporting
+/// Supporting APIs
 // Check if an event is happened (Check the header file for the list of events in the enum)
 bool rum_check_event(int event);
 ```
