@@ -1,9 +1,31 @@
+/**************************************************************************************
+ *
+ *  MIT License
+ *
+ *  Copyright (c) 2023 Bagas J. Sitanggang
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in all
+ *  copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ *
+ ************************************************************************************/
 #include "rum.h"
 
-#include <stdio.h>
-
 #include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
 
 #include <stdlib.h>
@@ -22,16 +44,12 @@ typedef struct {
     struct {
         uint32_t texture;
         uint8_t* data;
-        size_t data_size;
-        size_t width, height;
+        uint64_t data_size;
+        uint64_t width, height;
         RumImageFormat format;
         bool updated;
     } image;
 } RumContext;
-
-typedef struct {
-    vec2_t position, tex_coords;
-} RumVertex;
 
 const char* vert_shader_source = 
     "#version 330 core\n"
@@ -66,7 +84,6 @@ bool rum_init(const char* screen_title, int32_t screen_width, int32_t screen_hei
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    
     RUM.glfw_window = glfwCreateWindow((int)screen_width, (int)screen_height, screen_title, NULL, NULL);
 
     RUM.image.width = screen_width;
@@ -104,17 +121,17 @@ bool rum_init(const char* screen_title, int32_t screen_width, int32_t screen_hei
 
     glGenBuffers(1, &RUM.vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, RUM.vertex_buffer);
-    RumVertex vertices[] = {
-        (RumVertex) { vec2(-1.0f, -1.0f), vec2(0.0f, 0.0f) },
-        (RumVertex) { vec2( 1.0f, -1.0f), vec2(1.0f, 0.0f) },
-        (RumVertex) { vec2( 1.0f,  1.0f), vec2(1.0f, 1.0f) },
-        (RumVertex) { vec2(-1.0f,  1.0f), vec2(0.0f, 1.0f) },
+    float vertices[] = {
+        -1.0f, -1.0f, 0.0f, 0.0f,
+         1.0f, -1.0f, 1.0f, 0.0f,
+         1.0f,  1.0f, 1.0f, 1.0f,
+        -1.0f,  1.0f, 0.0f, 1.0f,
     };
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(RumVertex), (const void*) offsetof(RumVertex, position));
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (const void*)0);
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(RumVertex), (const void*) offsetof(RumVertex, tex_coords));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (const void*)8);
 
     glGenBuffers(1, &RUM.index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RUM.index_buffer);
